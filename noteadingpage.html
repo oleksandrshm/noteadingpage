@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Note Adding Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .center-button {
+      width: 80px;
+      height: 80px;
+      background-color: #007BFF;
+      color: white;
+      font-size: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 15px;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .branches {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .branch {
+      z-index: 10;
+      position: absolute;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      border-radius: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      box-sizing: border-box;
+      cursor: grab;
+      overflow: hidden;
+      min-width: 200px;
+      transition: z-index 0.3s ease;
+    }
+
+    .branch textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: none;
+      font-size: 20px;
+      outline: none;
+      overflow: hidden;
+      cursor: text;
+      min-height: 33px;
+    }
+
+    .branch img {
+      max-width: 100%;
+      margin-top: 10px;
+      max-height: 100px;
+    }
+
+    .file-label {
+      margin-top: 10px;
+      background: #007BFF;
+      width: 100%;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .file-image {
+      max-width: 100%;
+    }
+
+    .resizer {
+      width: 10px;
+      height: 10px;
+      background: #007BFF;
+      border-radius: 50%;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      cursor: se-resize;
+    }
+
+    .slider {
+      width: 80px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .bring-to-front {
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="main">
+  <div id="centerButton" class="center-button">+</div>
+  <div id="branches" class="branches">
+    <!-- Branches will be added here -->
+  </div>
+  <svg id="lines" class="lines" width="100%" height="100%">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="black"/>
+      </marker>
+    </defs>
+  </svg>
+</div>
+<script>
+  document.getElementById('centerButton').addEventListener('click', function () {
+    const branches = document.getElementById('branches');
+    const lines = document.getElementById('lines');
+    const branchCount = branches.getElementsByClassName('branch').length;
+    const branch = document.createElement('div');
+    branch.classList.add('branch');
+
+    // Create and add textarea
+    const textarea = document.createElement('textarea');
+    textarea.placeholder = "Note...";
+    branch.appendChild(textarea);
+
+    // Create and add image input
+    const imgInput = document.createElement('input');
+    imgInput.id = Math.random().toString();
+    imgInput.type = "file";
+    imgInput.accept = "image/*";
+    imgInput.style.display = "none";
+    imgInput.style.marginTop = "10px";
+    const fileLabel = document.createElement('label');
+    fileLabel.htmlFor = imgInput.id
+    fileLabel.innerHTML = "Upload Image"
+    fileLabel.classList.add("file-label")
+
+    branch.appendChild(imgInput);
+    branch.appendChild(fileLabel);
+
+    imgInput.addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = "file-image"
+          const beforeLastChild = branch.children[branch.children.length - 2];
+          branch.insertBefore(img, beforeLastChild);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Create and add resizer
+    const resizer = document.createElement('div');
+    resizer.classList.add('resizer');
+    branch.appendChild(resizer);
+
+    // Create and add font size slider
+
+    const slider = document.createElement('input');
+    slider.type = "range";
+    slider.classList.add('slider');
+    slider.min = "10";
+    slider.max = "36";
+    slider.value = "20";
+    branch.appendChild(slider);
+    branches.appendChild(branch);
+
+    const centerButton = document.getElementById('centerButton');
+    const rectCenter = centerButton.getBoundingClientRect();
+    const centerX = rectCenter.left + rectCenter.width / 2;
+    const centerY = rectCenter.top + rectCenter.height / 2;
+    const angle = (branchCount * 72) % 360;
+    const radius = 100;
+    const branchX = centerX + radius * Math.cos(angle * Math.PI / 180);
+    const branchY = centerY + radius * Math.sin(angle * Math.PI / 180);
+    branch.style.left = `${branchX - branch.offsetWidth / 2}px`;
+    branch.style.top = `${branchY - branch.offsetHeight / 2}px`;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    const lineId = `line-${branchCount}`;
+    line.setAttribute('id', lineId);
+    line.setAttribute("x1", centerX);
+    line.setAttribute("y1", centerY);
+    line.setAttribute("x2", branchX);
+    line.setAttribute("y2", branchY);
+    line.setAttribute("stroke", "black");
+    line.setAttribute("stroke-width", "2");
+    line.setAttribute("marker-end", "url(#arrowhead)");
+    lines.appendChild(line);
+
+    branch.dataset.lineId = lineId;
+    makeDraggable(branch, line);
+    makeResizable(branch, resizer, textarea, line);
+
+    // Adjust textarea height automatically
+    textarea.addEventListener('input', function () {
+      adjustTextareaHeight(textarea, branch);
+    });
+
+    // Show slider on hover and right-click to adjust
+    branch.addEventListener('mouseenter', function () {
+      slider.style.display = "block";
+    });
+
+    branch.addEventListener('mouseleave', function () {
+      slider.style.display = "none";
+    });
+
+    slider.addEventListener('input', function () {
+      textarea.style.fontSize = `${slider.value}px`;
+      adjustTextareaHeight(textarea, branch);
+    });
+
+    adjustTextareaHeight(textarea, branch);
+  });
+
+  document.getElementById('centerButton').addEventListener('mouseover', function () {
+    const branches = document.getElementsByClassName('branch');
+    for (let branch of branches) {
+      branch.classList.add('bring-to-front');
+    }
+  });
+
+  document.getElementById('centerButton').addEventListener('mouseout', function () {
+    const branches = document.getElementsByClassName('branch');
+
+    for (let branch of branches) {
+      branch.classList.remove('bring-to-front');
+    }
+  });
+
+  function adjustTextareaHeight(textarea, element) {
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    //element.style.height = `${textarea.scrollHeight + 30}px`;
+  }
+
+  function makeDraggable(element, line) {
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    element.addEventListener('mousedown', function (e) {
+      if (e.target.tagName.toLowerCase() === 'textarea' || e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('resizer')) return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialX = element.offsetLeft;
+      initialY = element.offsetTop;
+      element.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (isDragging) {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        element.style.left = `${initialX + dx}px`;
+        element.style.top = `${initialY + dy}px`;
+        updateLinePosition(element, line);
+      }
+    });
+
+    document.addEventListener('mouseup', function () {
+      if (isDragging) {
+        isDragging = false;
+        element.style.cursor = 'grab';
+      }
+    });
+  }
+
+  function makeResizable(element, resizer, textarea, line) {
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    resizer.addEventListener('mousedown', function (e) {
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = element.offsetWidth;
+      startHeight = element.offsetHeight;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (isResizing) {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        element.style.width = `${startWidth + dx}px`;
+        //element.style.height = `${startHeight + dy}px`;
+        textarea.style.width = '100%';
+        adjustTextareaHeight(textarea, element);
+        updateLinePosition(element, line);
+      }
+    });
+
+    document.addEventListener('mouseup', function () {
+      if (isResizing) {
+        isResizing = false;
+      }
+    });
+  }
+
+  function updateLinePosition(element, line) {
+    const rectCenter = document.getElementById('centerButton').getBoundingClientRect();
+    const centerX = rectCenter.left + rectCenter.width / 2;
+    const centerY = rectCenter.top + rectCenter.height / 2;
+    const rectElement = element.getBoundingClientRect();
+    const branchX = rectElement.left + rectElement.width / 2;
+    const branchY = rectElement.top + rectElement.height / 2;
+
+    line.setAttribute('x2', branchX);
+    line.setAttribute('y2', branchY);
+  }
+</script>
+</body>
+</html>
